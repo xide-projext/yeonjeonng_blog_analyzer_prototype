@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블로그 SEO 분석기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .score.warning {
+            color: #FF9800;
+        }
+
+        .score.error {
+            color: #F44336;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .keyword-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .keyword-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ""; }
+            40% { content: "."; }
+            60% { content: ".."; }
+            80%, 100% { content: "..."; }
+        }
+
+        .chart-container {
+            height: 200px;
+            margin-top: 15px;
+        }
+
+        .recommendations {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .recommendations h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .recommendations li {
+            padding: 5px 0;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 블로그 SEO 분석기</h1>
+            <p>URL만 입력하면 종합적인 SEO 및 마케팅 분석을 제공합니다</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input type="url" id="urlInput" placeholder="분석할 블로그 URL을 입력하세요 (예: https://blog.example.com/post)">
+                <button class="analyze-btn" onclick="analyzeUrl()">분석 시작</button>
+            </div>
+            
+            <div class="results" id="results" style="display: none;">
+                <div class="result-card">
+                    <h3>📊 종합 SEO 점수</h3>
+                    <div class="score" id="overallScore">85</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 85%"></div>
+                    </div>
+                    <div class="metric">
+                        <span>키워드 최적화</span>
+                        <span id="keywordScore">78%</span>
+                    </div>
+                    <div class="metric">
+                        <span>콘텐츠 품질</span>
+                        <span id="contentScore">92%</span>
+                    </div>
+                    <div class="metric">
+                        <span>기술적 SEO</span>
+                        <span id="technicalScore">80%</span>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>🔍 키워드 분석</h3>
+                    <div class="metric">
+                        <span>주요 키워드 수</span>
+                        <span id="keywordCount">12</span>
+                    </div>
+                    <div class="metric">
+                        <span>키워드 밀도</span>
+                        <span id="keywordDensity">2.3%</span>
+                    </div>
+                    <div class="keyword-cloud" id="keywordCloud">
+                        <span class="keyword-tag">마케팅</span>
+                        <span class="keyword-tag">SEO</span>
+                        <span class="keyword-tag">블로그</span>
+                        <span class="keyword-tag">콘텐츠</span>
+                        <span class="keyword-tag">최적화</span>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>📈 콘텐츠 분석</h3>
+                    <div class="metric">
+                        <span>글자 수</span>
+                        <span id="wordCount">1,250</span>
+                    </div>
+                    <div class="metric">
+                        <span>가독성 점수</span>
+                        <span id="readabilityScore">88%</span>
+                    </div>
+                    <div class="metric">
+                        <span>감성 점수</span>
+                        <span id="sentimentScore">긍정적</span>
+                    </div>
+                    <div class="metric">
+                        <span>전문성 점수</span>
+                        <span id="expertiseScore">85%</span>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>🏆 경쟁 분석</h3>
+                    <div class="metric">
+                        <span>키워드 경쟁도</span>
+                        <span id="competitionScore">중간</span>
+                    </div>
+                    <div class="metric">
+                        <span>상위 노출 가능성</span>
+                        <span id="rankingPotential">높음</span>
+                    </div>
+                    <div class="metric">
+                        <span>콘텐츠 독창성</span>
+                        <span id="uniqueness">92%</span>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>💡 개선 제안</h3>
+                    <div class="recommendations">
+                        <h4>즉시 개선 가능</h4>
+                        <ul id="immediateActions">
+                            <li>메타 설명 최적화 (현재 130자)</li>
+                            <li>이미지 alt 태그 추가 (3개 누락)</li>
+                            <li>내부 링크 2개 추가 권장</li>
+                        </ul>
+                    </div>
+                    <div class="recommendations">
+                        <h4>장기 개선 전략</h4>
+                        <ul id="longTermActions">
+                            <li>롱테일 키워드 5개 추가</li>
+                            <li>관련 토픽 콘텐츠 시리즈 제작</li>
+                            <li>사용자 경험 개선 (체류시간 증가)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>🎯 예상 KPI</h3>
+                    <div class="metric">
+                        <span>예상 체류시간</span>
+                        <span id="expectedTime">3분 20초</span>
+                    </div>
+                    <div class="metric">
+                        <span>바운스율 예측</span>
+                        <span id="bounceRate">35%</span>
+                    </div>
+                    <div class="metric">
+                        <span>공유 가능성</span>
+                        <span id="shareability">높음</span>
+                    </div>
+                    <div class="metric">
+                        <span>전환율 예측</span>
+                        <span id="conversionRate">4.2%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 실제 분석 함수 (시뮬레이션)
+        function analyzeUrl() {
+            const url = document.getElementById('urlInput').value;
+            
+            if (!url) {
+                alert('URL을 입력해주세요.');
+                return;
+            }
+
+            // 로딩 상태 표시
+            const results = document.getElementById('results');
+            results.style.display = 'block';
+            results.innerHTML = '<div class="loading">분석 중입니다</div>';
+
+            // 실제 분석 시뮬레이션
+            setTimeout(() => {
+                const analysisResult = performAnalysis(url);
+                displayResults(analysisResult);
+            }, 3000);
+        }
+
+        // 분석 로직 시뮬레이션
+        function performAnalysis(url) {
+            // 실제로는 여기서 다음 작업들을 수행:
+            // 1. 웹 크롤링으로 콘텐츠 추출
+            // 2. 자연어 처리로 텍스트 분석
+            // 3. SEO 요소 검사
+            // 4. 경쟁사 분석
+            
+            return {
+                overallScore: Math.floor(Math.random() * 30) + 70,
+                keywordScore: Math.floor(Math.random() * 25) + 75,
+                contentScore: Math.floor(Math.random() * 20) + 80,
+                technicalScore: Math.floor(Math.random() * 30) + 70,
+                keywords: generateKeywords(),
+                contentMetrics: generateContentMetrics(),
+                recommendations: generateRecommendations()
+            };
+        }
+
+        function generateKeywords() {
+            const keywords = [
+                '마케팅', 'SEO', '블로그', '콘텐츠', '최적화', 
+                '키워드', '검색엔진', '트래픽', '순위', '분석'
+            ];
+            return keywords.sort(() => Math.random() - 0.5).slice(0, 5);
+        }
+
+        function generateContentMetrics() {
+            return {
+                wordCount: Math.floor(Math.random() * 2000) + 500,
+                readability: Math.floor(Math.random() * 30) + 70,
+                sentiment: ['긍정적', '중립적', '부정적'][Math.floor(Math.random() * 3)]
+            };
+        }
+
+        function generateRecommendations() {
+            const immediate = [
+                '메타 설명 최적화',
+                '이미지 alt 태그 추가',
+                '내부 링크 보강',
+                '제목 태그 개선'
+            ];
+            
+            const longTerm = [
+                '롱테일 키워드 확장',
+                '관련 콘텐츠 시리즈',
+                '사용자 경험 개선',
+                '백링크 구축'
+            ];
+            
+            return {
+                immediate: immediate.sort(() => Math.random() - 0.5).slice(0, 3),
+                longTerm: longTerm.sort(() => Math.random() - 0.5).slice(0, 3)
+            };
+        }
+
+        function displayResults(result) {
+            const results = document.getElementById('results');
+            
+            // 템플릿 복원
+            results.innerHTML = `
+                <div class="result-card">
+                    <h3>📊 종합 SEO 점수</h3>
+                    <div class="score ${getScoreClass(result.overallScore)}">${result.overallScore}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${result.overallScore}%"></div>
+                    </div>
+                    <div class="metric">
+                        <span>키워드 최적화</span>
+                        <span>${result.keywordScore}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>콘텐츠 품질</span>
+                        <span>${result.contentScore}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>기술적 SEO</span>
+                        
